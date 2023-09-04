@@ -1,7 +1,7 @@
 package com.github.sahhiill.fileserver.service;
 
 import com.github.sahhiill.fileserver.Constants;
-import org.apache.tomcat.util.http.fileupload.MultipartStream;
+import com.github.sahhiill.fileserver.models.FileTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -9,12 +9,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 @Service
 public class FileService {
 
+    private final Constants constants;
     private static final Logger log = LoggerFactory.getLogger(FileService.class);
+
+    public FileService(Constants constants) {
+        this.constants = constants;
+    }
 
     public List<File> getAllFiles() {
 
@@ -96,10 +101,6 @@ public class FileService {
     }
 
     public File getFile(String name) {
-        if (name.contains("/")) {
-            throw new RuntimeException("Invalid file name");
-        }
-
         String rootPath = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
         File rootFolder = new File(rootPath);
         File file = new File(rootFolder, name);
@@ -114,10 +115,11 @@ public class FileService {
     }
 
 
-    public boolean uploadFile(MultipartFile file) {
+    public void uploadFile(MultipartFile file) {
+
         String rootPath = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
         File rootFolder = new File(rootPath);
-        File newFile = new File(rootFolder, file.getOriginalFilename());
+        File newFile = new File(rootFolder, Objects.requireNonNull(file.getOriginalFilename()));
 
         try {
             file.transferTo(newFile);
@@ -127,6 +129,11 @@ public class FileService {
         }
 
         log.info("Uploaded file: " + newFile.getPath());
-        return true;
+    }
+
+    public FileTree getFileTree() {
+        String rootPath = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
+        File rootFolder = new File(rootPath);
+        return new FileTree(rootFolder);
     }
 }

@@ -1,15 +1,16 @@
 package com.github.sahhiill.fileserver.controller;
 
 import com.github.sahhiill.fileserver.models.FileChangeNameRequest;
+import com.github.sahhiill.fileserver.models.FileTree;
 import com.github.sahhiill.fileserver.service.FileService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,20 +56,27 @@ public class FileController {
         fileService.changeName(request.getName(), request.getNewName());
     }
 
-    @GetMapping("/download/{name}")
-    public void downloadFile(@PathVariable("name") String name, HttpServletResponse response) throws IOException {
-        File file = fileService.getFile(name);
+    @GetMapping("/download")
+    public void downloadFile(@RequestParam("path") String path, HttpServletResponse response) throws IOException {
+        File file = new File(path);
         FileSystemResource resource = new FileSystemResource(file);
         InputStream stream = resource.getInputStream();
         response.setContentType("application/octet-stream");
-        response.setHeader("Content-Disposition", "attachment; filename=" + file.getName());
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getName());
+        response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(file.length()));
         IOUtils.copy(stream, response.getOutputStream());
         response.flushBuffer();
     }
 
     @PostMapping("/upload")
     public void handleFileUpload(@RequestParam("file") MultipartFile file)  {
-        log.info("File uploaded");
+        log.info("File name: " + file.getOriginalFilename());
+        log.info("File size: " + file.getSize() + " bytes");
         fileService.uploadFile(file);
+    }
+
+    @GetMapping("/filetree")
+    public FileTree getFileTree() {
+        return fileService.getFileTree();
     }
 }
