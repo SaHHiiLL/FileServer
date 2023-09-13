@@ -17,6 +17,12 @@ public class FileServerApplication {
         SpringApplication.run(FileServerApplication.class, args);
     }
 
+    private final Constants constants;
+
+    public FileServerApplication(Constants constants) {
+        this.constants = constants;
+    }
+
     @Bean
     public void RootFolder() {
         String path = "/home/sahil/api-data/files";
@@ -32,6 +38,6 @@ public class FileServerApplication {
             }
         }
         log.info("Root folder at -> " + rootFolder.getPath());
-        Constants.ROOT_FOLDER = Optional.of(rootFolder.getPath());
+        constants.setRootFolder(path);
     }
 }

@@ -1,6 +1,9 @@
 package com.github.sahhiill.fileserver.service;
 
 import com.github.sahhiill.fileserver.Constants;
+import com.github.sahhiill.fileserver.exceptions.CannotRenameFile;
+import com.github.sahhiill.fileserver.exceptions.FileDoesNotExists;
+import com.github.sahhiill.fileserver.exceptions.InvalidFileName;
 import com.github.sahhiill.fileserver.models.FileTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class FileService {
@@ -23,7 +25,7 @@ public class FileService {
 
     public List<File> getAllFiles() {
 
-        String path = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
+        String path = constants.getRootFolder();
         File rootFolder = new File(path);
         File[] files = rootFolder.listFiles();
         if (files == null) {
@@ -35,13 +37,7 @@ public class FileService {
 
     public void createFile(String name) {
 
-        if (name.contains("/")) {
-            throw new RuntimeException("Invalid file name");
-        }
-
-        String rootPath = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
-        File rootFolder = new File(rootPath);
-        File file = new File(rootFolder, name);
+        File file = getFile(name, constants.getRootFolder());
         try {
             boolean newFile = file.createNewFile();
             if (!newFile) {
@@ -56,17 +52,10 @@ public class FileService {
     }
 
     public void deleteFile(String name) {
-        if (name.contains("/")) {
-            throw new RuntimeException("Invalid file name");
-        }
-
-        String rootPath = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
-        File rootFolder = new File(rootPath);
-        File file = new File(rootFolder, name);
+        File file = getFile(name, constants.getRootFolder());
 
         if (!file.exists()) {
-            log.error("File does not exist: " + file.getPath());
-            throw new RuntimeException("File does not exist");
+            throw new FileDoesNotExists(name);
         }
 
         boolean deleted = file.delete();
@@ -82,44 +71,22 @@ public class FileService {
             throw new RuntimeException("Invalid file name");
         }
 
-        String rootPath = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
+        String rootPath = constants.getRootFolder();
         File rootFolder = new File(rootPath);
         File file = new File(rootFolder, name);
 
-        if (!file.exists()) {
-            log.error("File does not exist: " + file.getPath());
-            throw new RuntimeException("File does not exist");
-        }
-
         boolean renamed = file.renameTo(new File(rootFolder, newName));
         if (!renamed) {
-            log.error("Failed to rename file: " + file.getPath());
-            throw new RuntimeException("Failed to rename file");
+            throw new CannotRenameFile(name, newName);
         }
 
         log.info("Renamed file: " + file.getPath() + " to " + newName);
     }
 
-    public File getFile(String name) {
-        String rootPath = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
-        File rootFolder = new File(rootPath);
-        File file = new File(rootFolder, name);
-
-        if (!file.exists()) {
-            log.error("File does not exist: " + file.getPath());
-            throw new RuntimeException("File does not exist");
-        }
-
-        log.info("Got file: " + file.getPath());
-        return file;
-    }
 
 
     public void uploadFile(MultipartFile file) {
-
-        String rootPath = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
-        File rootFolder = new File(rootPath);
-        File newFile = new File(rootFolder, Objects.requireNonNull(file.getOriginalFilename()));
+        File newFile = getFile(file.getOriginalFilename(), constants.getRootFolder());
 
         try {
             file.transferTo(newFile);
@@ -132,8 +99,26 @@ public class FileService {
     }
 
     public FileTree getFileTree() {
-        String rootPath = Constants.ROOT_FOLDER.orElseThrow(() -> new RuntimeException("Root folder not set"));
+        String rootPath = constants.getRootFolder();
         File rootFolder = new File(rootPath);
         return new FileTree(rootFolder);
+    }
+
+    private void checkFileName(String name) {
+        if (name.contains("/")) {
+            throw new InvalidFileName(name);
+        }
+    }
+
+    private File getFile(String name, String rootPath) {
+        checkFileName(name);
+        File rootFolder = new File(rootPath);
+        File file = new File(rootFolder, name);
+
+        if (!file.exists()) {
+            throw new FileDoesNotExists(name);
+        }
+
+        return file;
     }
 }
