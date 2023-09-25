@@ -8,9 +8,7 @@ async function getFileTree() {
 
     // flattening the tree to a list of file names
     let files = [];
-    let x = walkTree(files, rootFileNode, element);
-    console.log("All files: ")
-    console.log(x);
+    walkTree(files, rootFileNode, element);
 }
 
 function walkTree(list, node, element) {
@@ -45,7 +43,7 @@ class FileNode {
         if (children) {
             this.children = children.map(child => new FileNode(child.file, child.name, child.path, child.children));
         } else {
-            this.children = [];
+            this.children = undefined;
         }
         this.isFile = isFile;
         this.name = name;
