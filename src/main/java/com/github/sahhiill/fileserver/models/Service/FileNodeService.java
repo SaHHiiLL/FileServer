@@ -4,9 +4,12 @@ import com.github.sahhiill.fileserver.compression.SimpleCompression;
 import com.github.sahhiill.fileserver.models.FileNode;
 import com.github.sahhiill.fileserver.models.repos.FileNodeRepo;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FileNodeService {
@@ -37,12 +40,31 @@ public class FileNodeService {
         fileNodeRepo.save(fileNode);
     }
 
-//    public FileNode getFileNodeByPath(String path) {
-//        // deconstruct path
-//        String[] pathArray = path.split("/");
-//        String name = pathArray[pathArray.length - 1];
-//        String parentPath = path.substring(0, path.length() - name.length() - 1);
-//
-//    }
+    public void createAFolder(String name) {
+        FileNode fileNode = new FileNode(name, null, null, false, null);
+        fileNodeRepo.save(fileNode);
+    }
+
+    public void uploadFile(MultipartFile file, String path) {
+
+    }
+
+
+    public FileNode getFileNodeByPath(String path) {
+        // deconstruct path
+        String[] pathArray = path.split("/");
+        Deque<String> pathQueue = new ArrayDeque<>(Arrays.asList(pathArray));
+        // get the root
+        List<FileNode> root = fileNodeRepo.findByName(pathQueue.getLast());
+        if (root.size() == 0) {
+            throw new RuntimeException("Root not found");
+        }
+        // the root in question should match the entire deque of path
+        FileNode rootNode = root.get(0);
+        pathQueue.removeLast();
+        //TODO: iterate through the path queue
+
+        return null;
+    }
 
 }
