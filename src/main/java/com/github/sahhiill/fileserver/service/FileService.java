@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.List;
 
 @Service
@@ -83,9 +84,9 @@ public class FileService {
         log.info("Renamed file: " + file.getPath() + " to " + newName);
     }
 
+    public File uploadFile(MultipartFile file) {
 
 
-    public void uploadFile(MultipartFile file) {
         File newFile = getFile(file.getOriginalFilename(), constants.getRootFolder());
 
         try {
@@ -96,9 +97,10 @@ public class FileService {
         }
 
         log.info("Uploaded file: " + newFile.getPath());
+        return newFile;
     }
 
-    public FileTree getFileTree() {
+    public FileTree getFileTree() throws FileNotFoundException {
         String rootPath = constants.getRootFolder();
         File rootFolder = new File(rootPath);
         return new FileTree(rootFolder);
